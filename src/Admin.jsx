@@ -13,7 +13,7 @@ async function processImage(src, rot, ratio) {
   x.drawImage(img, -img.width / 2, -img.height / 2)
   let cw = sw, ch = sh
   if (ratio) { if (sw / sh > ratio) cw = sh * ratio; else ch = sw / ratio }
-  const k = Math.min(1, 1200 / Math.max(cw, ch))
+  const k = Math.min(1, 900 / Math.max(cw, ch))
   const c2 = document.createElement('canvas')
   c2.width = Math.round(cw * k); c2.height = Math.round(ch * k)
   c2.getContext('2d').drawImage(c1, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, c2.width, c2.height)
@@ -21,12 +21,19 @@ async function processImage(src, rot, ratio) {
 }
 
 const input = 'w-full rounded-xl border border-mint/25 bg-card px-3 py-2'
+const L = ({ t, children }) => (
+  <label className="block"><span className="mb-1 block text-sm font-medium text-mint">{t}</span>{children}</label>
+)
+const removeImg = (u) => {
+  const m = (u || '').split('/pose-images/')[1]
+  if (m) supabase.storage.from('pose-images').remove([m])
+}
 const btn = 'rounded-xl px-4 py-2 font-medium'
 
 function ImagePicker({ url, onBlob }) {
   const [src, setSrc] = useState(null)
   const [rot, setRot] = useState(0)
-  const [ratio, setRatio] = useState(4 / 5)
+  const [ratio, setRatio] = useState(0)
   const [preview, setPreview] = useState(url)
   useEffect(() => {
     if (!src) return
@@ -35,8 +42,11 @@ function ImagePicker({ url, onBlob }) {
   return (
     <div>
       {preview && <img src={preview} alt="" className="mb-2 max-h-72 rounded-xl" />}
-      <input type="file" accept="image/*"
-        onChange={(e) => { const f = e.target.files[0]; if (f) { setRot(0); setSrc(URL.createObjectURL(f)) } }} />
+      <label className={`${btn} grad inline-block cursor-pointer text-black`}>
+        {preview ? 'Đổi ảnh' : 'Chọn ảnh'}
+        <input type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const f = e.target.files[0]; if (f) { setRot(0); setSrc(URL.createObjectURL(f)) } }} />
+      </label>
       {src && (
         <div className="mt-2 flex flex-wrap gap-2">
           <button type="button" className={`${btn} bg-card`} onClick={() => setRot((rot + 90) % 360)}>Xoay 90°</button>
@@ -81,6 +91,7 @@ function Editor({ pose, count, onDone }) {
         ? await supabase.from('poses').update(row).eq('id', pose.id)
         : await supabase.from('poses').insert({ ...row, sort_order: count })
       if (r.error) throw r.error
+      if (blob && pose?.image_url) removeImg(pose.image_url)
       onDone()
     } catch (e) { setMsg('Không lưu được: ' + e.message); setBusy(false) }
   }
@@ -89,16 +100,16 @@ function Editor({ pose, count, onDone }) {
     <div className="space-y-3 rounded-2xl bg-card/70 p-4">
       <h2 className="text-xl font-semibold">{pose ? 'Sửa tư thế' : 'Thêm tư thế'}</h2>
       <ImagePicker url={pose?.image_url} onBlob={setBlob} />
-      <input className={input} placeholder="Tên tiếng Việt" value={f.name_vi} onChange={set('name_vi')} />
-      <input className={input} placeholder="Tên Sanskrit" value={f.name_sanskrit || ''} onChange={set('name_sanskrit')} />
+      <L t="Tên tiếng Việt"><input className={input} placeholder="Tên tiếng Việt" value={f.name_vi} onChange={set('name_vi')} /></L>
+      <L t="Tên Sanskrit"><input className={input} placeholder="Tên Sanskrit" value={f.name_sanskrit || ''} onChange={set('name_sanskrit')} /></L>
       <div className="grid grid-cols-2 gap-2">
-        <select className={input} value={f.category} onChange={set('category')}>{CATS.map((c) => <option key={c}>{c}</option>)}</select>
-        <select className={input} value={f.difficulty} onChange={set('difficulty')}>{LEVELS.map((c) => <option key={c}>{c}</option>)}</select>
+        <L t="Nhóm tư thế"><select className={input} value={f.category} onChange={set('category')}>{CATS.map((c) => <option key={c}>{c}</option>)}</select></L>
+        <L t="Độ khó"><select className={input} value={f.difficulty} onChange={set('difficulty')}>{LEVELS.map((c) => <option key={c}>{c}</option>)}</select></L>
       </div>
-      <input className={input} placeholder="Thời gian giữ (ví dụ: 5 nhịp thở)" value={f.hold_time || ''} onChange={set('hold_time')} />
-      <textarea className={input} rows={4} placeholder="Lợi ích" value={f.benefits || ''} onChange={set('benefits')} />
-      <textarea className={input} rows={6} placeholder="Các bước thực hiện (mỗi dòng là một bước)" value={f.steps} onChange={set('steps')} />
-      <textarea className={input} rows={3} placeholder="Lưu ý an toàn, chống chỉ định" value={f.safety_notes || ''} onChange={set('safety_notes')} />
+      <L t="Thời gian giữ"><input className={input} placeholder="Thời gian giữ (ví dụ: 5 nhịp thở)" value={f.hold_time || ''} onChange={set('hold_time')} /></L>
+      <L t="Lợi ích"><textarea className={input} rows={4} placeholder="Lợi ích" value={f.benefits || ''} onChange={set('benefits')} /></L>
+      <L t="Các bước thực hiện (mỗi dòng một bước)"><textarea className={input} rows={6} placeholder="Các bước thực hiện (mỗi dòng là một bước)" value={f.steps} onChange={set('steps')} /></L>
+      <L t="Lưu ý an toàn, chống chỉ định"><textarea className={input} rows={3} placeholder="Lưu ý an toàn, chống chỉ định" value={f.safety_notes || ''} onChange={set('safety_notes')} /></L>
       {msg && <p className="text-red-400">{msg}</p>}
       <div className="flex gap-2">
         <button className={`${btn} grad text-black`} disabled={busy} onClick={save}>{busy ? 'Đang lưu...' : 'Lưu tư thế'}</button>
@@ -128,7 +139,7 @@ export default function Admin({ poses, reload }) {
   const del = async (p) => {
     if (!confirm(`Xóa tư thế "${p.name_vi}"?`)) return
     const { error } = await supabase.from('poses').delete().eq('id', p.id)
-    if (error) alert('Không xóa được: ' + error.message); else reload()
+    if (error) alert('Không xóa được: ' + error.message); else { removeImg(p.image_url); reload() }
   }
   const move = async (i, d) => {
     const a = [...poses]; const j = i + d
