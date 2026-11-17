@@ -1,0 +1,9 @@
+{
+  "name": "Inner Light Yoga",
+  "short_name": "Inner Light",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050807",
+  "theme_color": "#000000",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

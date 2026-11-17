@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@theme {
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-brand: "Lobster", cursive;
+  --color-card: #0e1916;
+  --color-mint: #2ee6a6;
+  --color-sky: #22b8e0;
+}
+body { background: #050807; color: #e6f6f0; font-family: var(--font-sans); }
+.grad { background: linear-gradient(90deg, #2ee6a6, #22b8e0); }
+.grad-text { background: linear-gradient(90deg, #2ee6a6, #22b8e0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+input, textarea, select { color: #e6f6f0; color-scheme: dark; }
+input::placeholder, textarea::placeholder { color: #7fa398; }
+:focus-visible { outline: 3px solid #2ee6a6; outline-offset: 2px; }
